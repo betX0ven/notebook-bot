@@ -58,6 +58,8 @@ def show_tasks():
     list_final += str(ids[i]) + '. '
     list_final += str(tasks[i]) + '\n'
 
-  return list_final
-
+  if list_final:
+    return list_final
+  else:
+    return 'Ваш список дел пустой'
 

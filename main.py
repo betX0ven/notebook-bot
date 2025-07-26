@@ -40,8 +40,21 @@ def tasks_keyboard():
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard
 
+def delall_keyboard():
+  buttons = [
+    [
+        types.InlineKeyboardButton(text="Да", callback_data="task_yes"),
+        types.InlineKeyboardButton(text="Нет", callback_data="task_no"),
+    ]
+  ]
+  keyboard = types.InlineKeyboardMarkup(inline_keyboard=buttons)
+  return keyboard
+
 
 add_task_flag = False
+del_task_flag = False
+delall_task_flag_q = False
+delall_task_flag = False
 
 
 @dp.message(F.text)
@@ -49,10 +62,13 @@ async def message_handler(message: types.Message):
   user_message = message.text
 
   global add_task_flag 
-   
+  global del_task_flag
+  global delall_task_flag
+  global delall_task_flag_q 
+
   if user_message=='Список дел':
     await message.answer('Вот список ваших дел:')
-
+    print(show_tasks())
     await message.answer(show_tasks(), reply_markup=tasks_keyboard())
     # await message.answer_sticker('CAACAgIAAxkBAAEBeuFohDr4GbtTpzyFs32Vib9_BA9-_gACbBUAAujW4hL2f3MiSHgDODYE')
   elif user_message=='Список проектов':
@@ -65,26 +81,42 @@ async def message_handler(message: types.Message):
       await message.answer('Задача добавлена')
       await message.answer(show_tasks(), reply_markup=tasks_keyboard())
       add_task_flag = False
+
     else:
       await message.answer('Не понял зачем вы это написали. Выберите нужную опцию')
     
 
-user_data = {}
-
 @dp.callback_query(F.data.startswith("task_"))
 async def callbacks(callback: types.CallbackQuery):
     action = callback.data.split("_")[1]
+    print(action)
     global add_task_flag
+    global del_task_flag
+    global delall_task_flag
+    global delall_task_flag_q
 
     if action == "add":
-        print('asdasdas')
         add_task_flag = True
         await callback.message.answer(f"Напишите здачу которую хотите добавить:")
 
     elif action == "del":
         pass
     elif action == "delall":
-        pass
+        delall_task_flag_q = True
+        await callback.message.answer(f"Вы действительно хотите очистить список дел?", reply_markup=delall_keyboard())
+    elif action == 'yes':
+        delall_task_flag = True
+        delete_all_tasks()
+        await callback.message.answer('Ваш список дел очищен')
+        show_tasks()
+    elif action == 'no':
+        delall_task_flag = False
+        await callback.message.answer('Ну нет так нет')
+        show_tasks()
+
+    
+    
+       
 
 
  # Запуск бота
