@@ -35,7 +35,11 @@ def tasks_keyboard():
             types.InlineKeyboardButton(text="Добавить задачу", callback_data="task_add"),
             types.InlineKeyboardButton(text="Удалить задачу", callback_data="task_del"),
         ],
-        [types.InlineKeyboardButton(text="Очистить список", callback_data="task_delall")]
+        [
+            types.InlineKeyboardButton(text="Очистить список", callback_data="task_delall"),
+            types.InlineKeyboardButton(text="Изменить задачу", callback_data="task_update"),
+         
+        ]
     ]
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard
@@ -55,7 +59,7 @@ add_task_flag = False
 del_task_flag = False
 delall_task_flag_q = False
 delall_task_flag = False
-
+update_task_flag = False
 
 @dp.message(F.text)
 async def message_handler(message: types.Message):
@@ -63,6 +67,7 @@ async def message_handler(message: types.Message):
 
   global add_task_flag 
   global del_task_flag
+  global update_task_flag
   global delall_task_flag
   global delall_task_flag_q 
 
@@ -81,7 +86,38 @@ async def message_handler(message: types.Message):
       await message.answer('Задача добавлена')
       await message.answer(show_tasks(), reply_markup=tasks_keyboard())
       add_task_flag = False
+    elif del_task_flag:
+      try:
+        if user_message in show_tasks_ids():
+          delete_task(user_message)
+          await message.answer(f'Задача под номером {user_message} удалена')
+          del_task_flag = False
+          await message.answer(show_tasks(), reply_markup=tasks_keyboard())
+        else:
+          await message.answer('Задачи с таким номером нет')
+      except Exception:
+         await message.answer('Введите целое число существующего номера задачи.')
+         await message.answer(show_tasks(), reply_markup=tasks_keyboard())
+    elif update_task_flag:
+      if ' ' not in user_message:
+        await message.answer('Между номером и задачей должен быть пробел.')
+        await message.answer(show_tasks(), reply_markup=tasks_keyboard())
+      else:
+        updating_text = user_message.split()
+        updated_text_id = updating_text[0]
+        updating_text_task = updating_text[1::]
 
+        updated_text_task = ''
+        for i in updating_text_task:
+          updated_text_task+=i+' '
+        if updated_text_id in show_tasks_ids():
+          update_task(updated_text_id, updated_text_task)
+          await message.answer(f'Ваша задача под номером {updated_text_id} была изменена')
+          update_task_flag=False
+          await message.answer(show_tasks(), reply_markup=tasks_keyboard())
+        else:
+          await message.answer('Задачи с таким номером нет. Вы че изменить хотите то')
+          await message.answer(show_tasks(), reply_markup=tasks_keyboard())
     else:
       await message.answer('Не понял зачем вы это написали. Выберите нужную опцию')
     
@@ -90,6 +126,7 @@ async def message_handler(message: types.Message):
 async def callbacks(callback: types.CallbackQuery):
     action = callback.data.split("_")[1]
     print(action)
+    global update_task_flag
     global add_task_flag
     global del_task_flag
     global delall_task_flag
@@ -100,19 +137,23 @@ async def callbacks(callback: types.CallbackQuery):
         await callback.message.answer(f"Напишите здачу которую хотите добавить:")
 
     elif action == "del":
-        pass
+        del_task_flag = True
+        await callback.message.answer(f"Напишите номер задачи которую хотите удалить:")
     elif action == "delall":
         delall_task_flag_q = True
         await callback.message.answer(f"Вы действительно хотите очистить список дел?", reply_markup=delall_keyboard())
+    elif action == 'update':
+        update_task_flag = True
+        await callback.message.answer('Напишите номер задачи которую хотите изменить и новую задачу, через пробел')
     elif action == 'yes':
         delall_task_flag = True
         delete_all_tasks()
         await callback.message.answer('Ваш список дел очищен')
-        show_tasks()
+        await callback.message.answer(show_tasks())
     elif action == 'no':
         delall_task_flag = False
         await callback.message.answer('Ну нет так нет')
-        show_tasks()
+        await callback.message.answer(show_tasks())
 
     
     

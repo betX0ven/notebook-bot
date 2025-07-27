@@ -29,10 +29,11 @@ def add_task(new_task):
 
 def delete_task(task_id):
   tasks_cursor.execute('DELETE FROM All_tasks WHERE id = ?', (task_id,))
+  tasks_cursor.execute('UPDATE All_tasks SET id=id-1 WHERE id>2')
   tasks_db.commit()
 
 def update_task(task_id, new_task):
-  tasks_cursor.execute('UPDATE All_tasks SET task_text = ? WHERE id = ?', (new_task, task_id))
+  tasks_cursor.execute('UPDATE All_tasks SET task_text = ? WHERE id = ?', (new_task, int(task_id)))
   tasks_db.commit()
 
 def delete_all_tasks():
@@ -63,3 +64,15 @@ def show_tasks():
   else:
     return 'Ваш список дел пустой'
 
+def show_tasks_ids():
+  tasks_cursor.execute('SELECT id FROM All_tasks ORDER BY id DESC')
+
+  ids = []
+  for id in tasks_cursor.fetchall():
+    ids.append(id[0])
+
+  list_final = ''
+
+  for i in range(len(ids)):
+    list_final += str(ids[i])
+  return list_final
